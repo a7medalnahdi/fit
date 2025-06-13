@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متتبع اللياقة البدنية المطور</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    :root {
+      --bg-color: #f4f5f9;
+      --surface-color: #ffffff;
+      --primary-color: #007aff;
+      --primary-gradient-end: #5856d6;
+      --completed-color: #34c759;
+      --completed-gradient-end: #30d158;
+      --on-surface-color: #1d1d1f;
+      --on-surface-variant: #6e6e73;
+      --border-color: #e5e5ea;
+      --shadow-color: rgba(0, 0, 0, 0.08);
+      --font-family: 'Tajawal', sans-serif;
+    }
+
+    html.dark {
+        --bg-color: #1c1c1e;
+        --surface-color: #2c2c2e;
+        --primary-color: #0a84ff;
+        --primary-gradient-end: #5e5ce6;
+        --on-surface-color: #f2f2f7;
+        --on-surface-variant: #8e8e93;
+        --border-color: #3a3a3c;
+        --shadow-color: rgba(0, 0, 0, 0.2);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-color);
+      margin: 0;
+      padding: 0;
+      color: var(--on-surface-color);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background 0.3s, color 0.3s;
+    }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 20px 15px 50px 15px; }
+
+    .main-header { text-align: center; margin-bottom: 30px; padding-top: 10px; position: relative; }
+    .main-header h1 { margin: 0 0 25px 0; font-size: 2.4rem; font-weight: 800; }
+
+    .theme-switcher {
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: pointer;
+        font-size: 1.5rem;
+        padding: 10px;
+        color: var(--on-surface-variant);
+        border-radius: 50%;
+        background: var(--surface-color);
+        box-shadow: 0 2px 5px var(--shadow-color);
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .theme-switcher .ph-sun { display: none; }
+    html.dark .theme-switcher .ph-sun { display: block; }
+    html.dark .theme-switcher .ph-moon { display: none; }
+
+
+    .weight-display-card {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-gradient-end) 100%);
+        color: white;
+        border-radius: 24px;
+        padding: 25px 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 12px 35px rgba(0, 122, 255, 0.25);
+    }
+    html.dark .weight-display-card { box-shadow: 0 12px 35px rgba(10, 132, 255, 0.3); }
+
+    .weight-display-card .text-content { z-index: 2; text-align: right; }
+    .weight-display-card .label { font-size: 1rem; font-weight: 500; opacity: 0.8; }
+    .weight-display-card .value { font-size: 2.8rem; font-weight: 700; display: block; line-height: 1.1; margin-top: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .weight-display-card .icon-bg { font-size: 8rem; opacity: 0.15; position: absolute; left: 20px; top: 50%; transform: translateY(-50%) rotate(-15deg); z-index: 1; color: white; }
+
+    .selectors-container {
+        padding: 15px;
+        border-radius: 18px;
+        margin-bottom: 25px;
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 12px var(--shadow-color);
+    }
+    .week-selector { display: flex; background: var(--bg-color); border-radius: 12px; padding: 5px; margin-bottom: 15px; }
+    .day-selector { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+    
+    .week-btn { flex: 1; border: none; background: transparent; color: var(--on-surface-variant); padding: 10px; border-radius: 9px; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; font-weight: 700; }
+    .day-btn { border: none; background: var(--bg-color); color: var(--on-surface-variant); border-radius: 9px; cursor: pointer; transition: all 0.3s ease; font-size: 0.9rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; position: relative; }
+
+    .week-btn.active { background: var(--surface-color); color: var(--on-surface-color); box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
+    .day-btn.active { background: var(--primary-color); color: white; }
+
+    .day-progress-circle { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; transform: rotate(-90deg); }
+    .day-progress-circle-bg { fill: none; stroke: var(--border-color); stroke-width: 3; }
+    .day-progress-circle-bar { fill: none; stroke: var(--completed-color); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+
+    .day-content { animation: fadeIn 0.5s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .section-title { font-size: 1.4rem; font-weight: 700; margin: 30px 0 15px 0; display: flex; align-items: center; gap: 10px; padding-bottom: 5px; border-bottom: 2px solid var(--border-color); }
+    .section-title i { color: var(--on-surface-variant); font-size: 1.5rem; }
+
+    .card { background: var(--surface-color); border-radius: 15px; padding: 15px 20px; margin-bottom: 12px; transition: all 0.2s ease-in-out; display: flex; align-items: center; border: 1px solid var(--border-color); box-shadow: 0 2px 5px var(--shadow-color); }
+    .card.completed { background-color: color-mix(in srgb, var(--completed-color) 15%, transparent); border-color: var(--completed-color); }
+    .card.completed label span { text-decoration: line-through; color: var(--on-surface-variant); }
+    .card label { display: flex; align-items: center; width: 100%; cursor: pointer; }
+    .card label span { font-weight: 500; }
+    .card input[type="checkbox"] { margin-left: 15px; width: 22px; height: 22px; cursor: pointer; flex-shrink: 0; appearance: none; border-radius: 50%; background: var(--bg-color); border: 1px solid var(--border-color); position: relative; transition: all 0.2s ease; }
+    .card input[type="checkbox"]:checked { background: var(--primary-color); border-color: var(--primary-color); }
+    .card input[type="checkbox"]:checked::before { content: ''; position: absolute; top: 6px; left: 3px; width: 12px; height: 6px; border: 2px solid white; border-top: none; border-right: none; transform: rotate(-45deg); }
+    
+    .cup-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 15px; }
+    .cup-btn { border: 1px solid var(--border-color); background: var(--surface-color); color: var(--on-surface-color); font-weight: 600; padding: 12px 0; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+    .cup-btn:hover { background: var(--bg-color); }
+    .cup-btn.reset-btn { background-color: #fff0f0; color: #d90429; border-color: #ffc2c2; }
+    html.dark .cup-btn.reset-btn { background-color: #5c1a1a; color: #ff8080; border-color: #8c2a2a; }
+
+    .water-progress-container { position: relative; }
+    .water-progress { background: var(--bg-color); height: 30px; border-radius: 15px; overflow: hidden; position: relative; border: 1px solid var(--border-color); }
+    .water-fill { height: 100%; background: var(--primary-color); width: 0%; border-radius: 15px; transition: all 0.5s ease-in-out; }
+    .water-progress.completed .water-fill { background: linear-gradient(45deg, var(--completed-color), var(--completed-gradient-end)); }
+    .water-text { position: absolute; width: 100%; text-align: center; line-height: 30px; color: var(--on-surface-color); font-weight: 700; text-shadow: 0 0 5px rgba(255,255,255,0.5); font-size: 0.9rem; }
+    .water-progress.completed .water-text { color: white; }
+    .water-trophy-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: white; font-size: 1.1rem; opacity: 0; transition: opacity 0.5s; }
+    .water-progress.completed .water-trophy-icon { opacity: 1; }
+    .settings-btn { background: none; border: none; color: var(--on-surface-variant); cursor: pointer; padding: 5px; font-size: 1.3rem; margin-right: auto; }
+
+    .weight-input-area { display: flex; align-items: center; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 15px; padding: 8px 15px; margin-top: 15px; }
+    .weight-input-area i { color: var(--on-surface-variant); font-size: 1.5rem; margin-left: 10px; }
+    .weight-input-area input { flex-grow: 1; border: none; background: none; margin: 0; padding: 8px 0; color: var(--on-surface-color); font-size: 1rem; }
+    .weight-input-area input:focus { outline: none; }
+    
+    .weight-chart-container { background: var(--surface-color); border-radius: 18px; padding: 20px; margin-top: 30px; box-shadow: 0 4px 12px var(--shadow-color); border: 1px solid var(--border-color); }
+    .weight-chart-container h3 { margin: 0 0 20px 0; font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
+    .weight-chart-container svg { width: 100%; height: auto; }
+    .weight-chart-container .grid { stroke: var(--border-color); stroke-opacity: 0.7; stroke-width: 1; }
+    .weight-chart-container .line { fill: none; stroke: var(--primary-color); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .weight-chart-container .point { fill: var(--primary-color); stroke: var(--surface-color); stroke-width: 3; }
+    .weight-chart-container .label { font-family: var(--font-family); font-size: 12px; fill: var(--on-surface-variant); }
+    .weight-chart-container .no-data { text-align: center; color: var(--on-surface-variant); padding: 40px 0; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+    .modal-content { background: var(--surface-color); padding: 25px; border-radius: 18px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transform: scale(0.9); transition: transform 0.3s ease; }
+    .modal-overlay.visible .modal-content { transform: scale(1); }
+    .modal-content h3 { margin: 0 0 20px 0; font-size: 1.5rem; text-align: center; }
+    .modal-content .form-group { margin-bottom: 15px; }
+    .modal-content label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--on-surface-variant); }
+    .modal-content input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); font-size: 1rem; color: var(--on-surface-color); }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 25px; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .modal-btn.primary { background: var(--primary-color); color: white; }
+    .modal-btn.secondary { background: var(--bg-color); color: var(--on-surface-color); border: 1px solid var(--border-color); }
+
+    .confetti-piece { position: absolute; width: 10px; height: 10px; background: #f00; opacity: 0; z-index: 1001; }
+    @keyframes confetti-fall { 0% { opacity: 1; transform: translateY(0) rotateZ(0); } 100% { opacity: 1; transform: translateY(110vh) rotateZ(720deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="app-container">
+    <header class="main-header">
+        <div id="theme-switcher" class="theme-switcher">
+            <i class="ph-bold ph-moon"></i>
+            <i class="ph-bold ph-sun"></i>
+        </div>
+        <h1>متتبع اللياقة</h1>
+        <div class="header-widget-container">
+            <div class="weight-display-card">
+                <i class="ph-bold ph-scales icon-bg"></i>
+                <div class="text-content">
+                    <span class="label">آخر وزن مسجل</span>
+                    <span class="value" id="currentWeightDisplay">غير مسجل</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="selectors-container">
+        <div class="week-selector" id="week-selector"></div>
+        <div class="day-selector" id="day-selector"></div>
+    </div>
+    <div id="day-content-area"></div>
+    
+    <div class="weight-chart-container">
+        <h3><i class="ph-bold ph-chart-line-up"></i>تطور الوزن</h3>
+        <div id="weight-chart"></div>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="modal-overlay">
+      <div class="modal-content">
+          <h3>الإعدادات</h3>
+          <div class="form-group">
+              <label for="water-goal-input">هدف الماء اليومي (مل)</label>
+              <input type="number" id="water-goal-input" placeholder="مثال: 3000">
+          </div>
+          <div class="modal-buttons">
+              <button id="modal-cancel" class="modal-btn secondary">إلغاء</button>
+              <button id="modal-save" class="modal-btn primary">حفظ</button>
+          </div>
+      </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // --- DATA ---
+      const WEEKS = 4;
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const arabicDays = { sunday: "الأحد", monday: "الاثنين", tuesday: "الثلاثاء", wednesday: "الأربعاء", thursday: "الخميس", friday: "الجمعة", saturday: "السبت" };
+      const programData = {
+        week1: {
+          sunday: { workouts: ["Chest Press (جهاز): 3 × 12", "Pec Deck (تفتيح صدر): 3 × 12", "Triceps Pushdown: 3 × 15", "كارديو: 20 دقيقة مشي سريع أو Elliptical"], meals: ["فطور: 2 بيض + توست أسمر + خيار (350 cal)", "سناك: 6 حبات لوز (100 cal)", "غداء: دجاج 150 جم + رز 90 جم + خضار (600 cal)", "سناك: تفاحة (100 cal)", "عشاء: تونة + خس + توست (400 cal)"] },
+          monday: { workouts: ["Leg Curl: 3 × 12", "Leg Extension: 3 × 12", "Glute Kickback: 3 × 15", "كارديو: دراجة 20 دقيقة"], meals: ["فطور: شوفان 30 جم + حليب قليل دسم + موزة صغيرة (350 cal)", "سناك: زبادي قليل دسم (100 cal)", "غداء: لحم 120 جم + بطاطس 150 جم + خضار (600 cal)", "سناك: خيار + قهوة سوداء (100 cal)", "عشاء: زبادي بروتين + خس (400 cal)"] },
+          tuesday: { workouts: ["Lat Pulldown: 3 × 12", "Seated Row: 3 × 12", "Dumbbell Curl: 3 × 15", "Shoulder Press: 3 × 12", "كارديو: 20 دقيقة مشي سريع"], meals: ["فطور: 2 بيض + توست أسمر + طماطم (350 cal)", "سناك: قهوة + تمرتين (100 cal)", "غداء: سمك مشوي 150 جم + رز 1/2 كوب + سلطة (600 cal)", "سناك: زبادي قليل دسم (100 cal)", "عشاء: بيضتين + خس (400 cal)"] },
+          wednesday: { workouts: ["HIIT Elliptical: 20 دقيقة", "Plank × 3", "Russian Twist × 30", "Bicycle Crunch × 30"], meals: ["فطور: زبادي بروتين + شوفان + قرفة (350 cal)", "سناك: موزة صغيرة (100 cal)", "غداء: دجاج 150 جم + خضار + رز 1/2 كوب (600 cal)", "سناك: خيار + قهوة (100 cal)", "عشاء: بيضتين + توست أسمر + خس (400 cal)"] },
+          thursday: { workouts: ["مشي 30 دقيقة"], meals: ["فطور: 2 بيض + توست أسمر + خيار (350 cal)", "سناك: 6 حبات لوز (100 cal)", "غداء: دجاج 150 جم + رز 90 جم + خضار (600 cal)", "سناك: تفاحة (100 cal)", "عشاء: تونة + خس + توست (400 cal)"] },
+          friday: { workouts: ["تمرين منزلي خفيف أو راحة"], meals: ["فطور: شوفان 30 جم + حليب قليل دسم + موزة صغيرة (350 cal)", "سناك: زبادي قليل دسم (100 cal)", "غداء: لحم 120 جم + بطاطس 150 جم + خضار (600 cal)", "سناك: خيار + قهوة سوداء (100 cal)", "عشاء: زبادي بروتين + خس (400 cal)"] },
+          saturday: { workouts: ["راحة"], meals: ["فطور متوسط تحبه (400 cal)", "غداء مشوي من برّا بدون دهون أو رز كثير (700 cal)", "عشاء خفيف (زبادي أو تونة) (400 cal)"] }
+        },
+        week2: {
+          sunday: { workouts: ["Bench Press (جهاز أو بار): 3 × 12", "Dumbbell Fly: 3 × 12", "Triceps Rope Pushdown: 3 × 15", "كارديو: 25 دقيقة Elliptical أو مشي سريع"], meals: ["فطور: 2 بيض + توست أسمر + خيار (350 cal)", "سناك: 10 لوز (100 cal)", "غداء: دجاج 150 جم + رز 1/2 كوب + خضار (600 cal)", "سناك: زبادي قليل الدسم (100 cal)", "عشاء: تونة بدون زيت + خس + توست (400 cal)"] },
+          monday: { workouts: ["Leg Press (خفيف): 3 × 12", "Leg Curl: 3 × 12", "Hip Thrust (بدون وزن إذا فيه ضغط): 3 × 15", "كارديو: دراجة 25 دقيقة"], meals: ["فطور: شوفان 30 جم + حليب قليل دسم + موزة (350 cal)", "سناك: تمرتين + قهوة (100 cal)", "غداء: لحم 120 جم + بطاطا مشوية 150 جم + خضار (600 cal)", "سناك: تفاحة (100 cal)", "عشاء: زبادي بروتين + خيار (400 cal)"] },
+          tuesday: { workouts: ["Lat Pulldown: 3 × 12", "Seated Row: 3 × 12", "Barbell Curl: 3 × 15", "Shoulder Dumbbell Press: 3 × 12", "كارديو: 25 دقيقة مشي"], meals: ["فطور: بيضتين + توست + طماطم (350 cal)", "سناك: زبادي قليل دسم + 5 حبات لوز (100 cal)", "غداء: سمك 150 جم + رز 1/2 كوب + سلطة (600 cal)", "سناك: خيار + قهوة (100 cal)", "عشاء: تونة + خس + توست (400 cal)"] },
+          wednesday: { workouts: ["HIIT: Elliptical 25 دقيقة (سرعة متغيرة)", "Plank: 3 × 30 ثانية", "Russian Twist: 40 تكرار", "Bicycle Crunch: 40 تكرار"], meals: ["فطور: زبادي بروتين + شوفان + قرفة (350 cal)", "سناك: موزة صغيرة (100 cal)", "غداء: دجاج 150 جم + خضار + رز 1/2 كوب (600 cal)", "سناك: قهوة + خيارتين (100 cal)", "عشاء: بيضتين + توست أسمر + خس (400 cal)"] },
+          thursday: { workouts: ["كارديو فقط: مشي 30 دقيقة", "أو تمرين منزلي خفيف"], meals: ["(نفس يوم الأحد تمامًا)"]},
+          friday: { workouts: ["تمرين HIIT منزلي خفيف (Jumping jacks + squats)", "أو مشي 20 دقيقة"], meals: ["فطور: شوفان + لبن قليل دسم (350 cal)", "سناك: مكعب جبن أو تمرتين (100 cal)", "غداء: لحم أو دجاج + رز بني + سلطة (650 cal)", "سناك: قهوة + خيار (100 cal)", "عشاء: زبادي بروتين (400 cal)"] },
+          saturday: { workouts: ["راحة"], meals: ["فطور مفتوح مدروس (فول + بيض + خبز بر = 400–450 cal)", "غداء مشوي بدون دهون (600–700 cal)", "عشاء خفيف جدًا (300 cal)"] }
+        },
+        week3: {
+          sunday: { workouts: ["Dumbbell Bench Press: 3 × 10", "Incline Chest Press (جهاز): 3 × 12", "Skull Crushers (ترايسبس): 3 × 12", "كارديو: 25 دقيقة مشي سريع أو Elliptical"], meals: ["فطور: 2 بيض + توست + خيار وطماطم (350 cal)", "سناك: 6 لوز (100 cal)", "غداء: دجاج 150 جم + 1/4 كوب رز + خضار (550 cal)", "سناك: زبادي قليل الدسم (100 cal)", "عشاء: تونة + خس + توست أسمر (400 cal)"] },
+          monday: { workouts: ["Leg Curl: 3 × 12", "Step-ups (بدون وزن): 3 × 12", "Glute Kickbacks: 3 × 15", "كارديو: دراجة ثابتة 25 دقيقة"], meals: ["فطور: شوفان 30 جم + لبن قليل دسم + قرفة (350 cal)", "سناك: تمرتين (80 cal)", "غداء: لحم 120 جم + بطاطا مشوية 100 جم + سلطة (600 cal)", "سناك: تفاحة (100 cal)", "عشاء: زبادي بروتين + خيار (400 cal)"] },
+          tuesday: { workouts: ["Lat Pulldown: 3 × 12", "T-Bar Row: 3 × 12", "Hammer Curl: 3 × 15", "Lateral Raise: 3 × 15", "كارديو: 20 دقيقة مشي سريع"], meals: ["فطور: بيضتين + شريحتين توست أسمر (350 cal)", "سناك: زبادي خفيف + 5 لوز (100 cal)", "غداء: سمك 150 جم + رز 1/4 كوب + خضار (550 cal)", "سناك: خيار + قهوة (100 cal)", "عشاء: علبة تونة + خس (400 cal)"] },
+          wednesday: { workouts: ["HIIT 25 دقيقة (مشي سريع + بطيء متبادل)", "Plank × 3", "Leg Raises × 30", "Mountain Climbers × 40"], meals: ["فطور: زبادي بروتين + ملعقة شوفان + قرفة (350 cal)", "سناك: موزة صغيرة (100 cal)", "غداء: دجاج 150 جم + خضار + بطاطا (550 cal)", "سناك: قهوة + خيارتين (100 cal)", "عشاء: بيضتين + خس + ملعقة شوفان (400 cal)"] },
+          thursday: { workouts: ["كارديو فقط: مشي 30 دقيقة", "Stretching 15 دقيقة"], meals: ["مثل يوم الأحد، لكن بدون رز (استبدله بخضار إضافية)"] },
+          friday: { workouts: ["15 دقيقة Stair Climber أو سلالم", "أو تمارين منزلية قوية (Bodyweight)"], meals: ["فطور: شوفان + زبادي (350 cal)", "غداء: دجاج + خضار فقط (500 cal)", "عشاء: زبادي بروتين + مكعب جبن لايت (400 cal)"] },
+          saturday: { workouts: ["راحة"], meals: ["فطور حر (بيض + خبز بر + فول = 400–450 cal)", "غداء مشوي + خضار فقط (600–650 cal)", "عشاء: خفيف جدًا (زبادي أو تونة)"] }
+        },
+        week4: {
+          sunday: { workouts: ["Dumbbell Chest Press: 3 × 10", "Cable Crossover: 3 × 12", "Triceps Overhead Extension: 3 × 15", "كارديو: 30 دقيقة مشي سريع أو HIIT"], meals: ["فطور: 2 بيض + توست + خس (350 cal)", "سناك: 6 لوز (100 cal)", "غداء: دجاج 150 جم + خضار فقط (500 cal)", "سناك: زبادي لايت (100 cal)", "عشاء: تونة بدون رز + خس (400 cal)"] },
+          monday: { workouts: ["Leg Curl: 3 × 12", "Reverse Lunges بدون وزن: 3 × 10", "Glute Kickbacks: 3 × 15", "كارديو: Stair Climber أو دراجة 25 دقيقة"], meals: ["فطور: شوفان 25 جم + زبادي لايت + قرفة (300 cal)", "سناك: تمرتين أو 5 لوز (100 cal)", "غداء: لحم 120 جم + خضار فقط (500 cal)", "سناك: تفاحة أو خيار (100 cal)", "عشاء: زبادي بروتين + شريحة جبن لايت (400 cal)"] },
+          tuesday: { workouts: ["Lat Pulldown: 3 × 12", "Cable Row: 3 × 12", "Dumbbell Curl: 3 × 15", "Lateral Raises: 3 × 15", "كارديو: 25 دقيقة HIIT متبدّل السرعة"], meals: ["فطور: بيضتين + توست + خيار (300 cal)", "سناك: زبادي أو 5 لوز (100 cal)", "غداء: سمك 150 جم + خضار (500 cal)", "سناك: قهوة سوداء + خيار (50 cal)", "عشاء: تونة أو زبادي (400 cal)"] },
+          wednesday: { workouts: ["HIIT على الدراجة أو المشي السريع 30 دقيقة", "Plank × 3", "Leg Raises × 40", "Russian Twist × 50"], meals: ["فطور: زبادي بروتين + ملعقة شوفان (300 cal)", "سناك: تفاحة أو تمرتين (100 cal)", "غداء: دجاج + خضار بدون كارب (500 cal)", "سناك: قهوة سوداء (0 cal)", "عشاء: زبادي بروتين أو تونة (400 cal)"] },
+          thursday: { workouts: ["كارديو فقط 30 دقيقة مشي", "تمرين خفيف منزلي (اختياري)"], meals: ["نفس الثلاثاء بالضبط"] },
+          friday: { workouts: ["HIIT خفيف أو مشي طويل (45 دقيقة)"], meals: ["نفس يوم الأربعاء"] },
+          saturday: { workouts: ["راحة"], meals: ["فطور خفيف وممتع (بيض + جبن + خبز بر = 400 cal)", "غداء تحبه لكن مشوي (700 cal)", "عشاء زبادي أو شوربة خفيفة (400 cal)"] }
+        }
+      };
+      
+      const App = {
+        // --- STATE ---
+        state: {
+            activeWeek: 'week1',
+            activeDay: 'sunday',
+            appData: {},
+            settings: {
+                waterGoal: 3000,
+                theme: 'light'
+            }
+        },
+
+        // --- ELEMENTS ---
+        elements: {
+            container: document.getElementById('app-container'),
+            currentWeightDisplay: document.getElementById('currentWeightDisplay'),
+            selectorsContainer: document.querySelector('.selectors-container'),
+            dayContentArea: document.getElementById('day-content-area'),
+            weekSelector: document.getElementById('week-selector'),
+            daySelector: document.getElementById('day-selector'),
+            weightChart: document.getElementById('weight-chart'),
+            themeSwitcher: document.getElementById('theme-switcher'),
+            settingsModal: {
+                overlay: document.getElementById('settings-modal'),
+                content: document.querySelector('.modal-content'),
+                waterGoalInput: document.getElementById('water-goal-input'),
+                saveBtn: document.getElementById('modal-save'),
+                cancelBtn: document.getElementById('modal-cancel')
+            }
+        },
+        
+        // --- INITIALIZATION ---
+        init() {
+            this.loadData();
+            this.applyTheme();
+            this.renderSelectors();
+            this.addEventListeners();
+            
+            const todayDayName = days[new Date().getDay()];
+            const lastWeek = localStorage.getItem('lastActiveWeek_v2') || 'week1';
+            this.setActiveState(lastWeek, todayDayName, true);
+        },
+
+        // --- DATA MANAGEMENT ---
+        loadData() {
+            const savedData = localStorage.getItem('gymTrackerData_v2');
+            this.state.appData = savedData ? JSON.parse(savedData) : {};
+
+            const savedSettings = localStorage.getItem('gymTrackerSettings_v2');
+            if (savedSettings) {
+                this.state.settings = { ...this.state.settings, ...JSON.parse(savedSettings) };
+            }
+            
+            // Initialize data structure if empty or new
+            for (let i = 1; i <= WEEKS; i++) {
+                const weekKey = `week${i}`;
+                if (!this.state.appData[weekKey]) this.state.appData[weekKey] = {};
+                days.forEach(day => {
+                    const dayProgram = programData[weekKey]?.[day] || { workouts: [], meals: [] };
+                    const existingData = this.state.appData[weekKey][day];
+                    if (!existingData || !existingData.hasOwnProperty('waterHistory')) {
+                        this.state.appData[weekKey][day] = {
+                            workouts: Array(dayProgram.workouts.length).fill(false),
+                            meals: Array(dayProgram.meals.length).fill(false),
+                            waterHistory: [],
+                            weight: ''
+                        };
+                    }
+                });
+            }
+        },
+
+        saveData() {
+            localStorage.setItem('gymTrackerData_v2', JSON.stringify(this.state.appData));
+            localStorage.setItem('gymTrackerSettings_v2', JSON.stringify(this.state.settings));
+            localStorage.setItem('lastActiveWeek_v2', this.state.activeWeek);
+            this.updateLatestWeightDisplay();
+            this.renderWeightChart();
+        },
+
+        // --- THEME ---
+        applyTheme() {
+            document.documentElement.className = this.state.settings.theme;
+        },
+
+        toggleTheme() {
+            this.state.settings.theme = this.state.settings.theme === 'light' ? 'dark' : 'light';
+            this.applyTheme();
+            this.saveData(); // Save settings
+            this.renderWeightChart(); // Re-render chart for new theme colors
+        },
+
+        // --- UI RENDERING ---
+        renderSelectors() {
+            this.elements.weekSelector.innerHTML = Array.from({length: WEEKS}, (_, i) => `<button class="week-btn" data-week="week${i + 1}">الأسبوع ${i + 1}</button>`).join('');
+            this.elements.daySelector.innerHTML = days.map(day => `
+                <button class="day-btn" data-day="${day}">
+                    <span>${arabicDays[day]}</span>
+                    <svg class="day-progress-circle" viewBox="0 0 20 20">
+                        <circle class="day-progress-circle-bg" cx="10" cy="10" r="8"/>
+                        <circle class="day-progress-circle-bar" cx="10" cy="10" r="8"/>
+                    </svg>
+                </button>`).join('');
+        },
+        
+        generateDayContentHTML(week, day) {
+            const dayProgram = programData[week]?.[day];
+            if (!dayProgram) return '<p>لا توجد بيانات لهذا اليوم.</p>';
+            const workoutsHTML = dayProgram.workouts.map((task, index) => this.createTaskCardHTML('workouts', index, task)).join('');
+            const mealsHTML = dayProgram.meals.map((task, index) => this.createTaskCardHTML('meals', index, task)).join('');
+            
+            return `
+              <div class="day-content">
+                <div class="section-title"><i class="ph-bold ph-barbell"></i>التمارين</div>
+                ${workoutsHTML || '<p>لا توجد تمارين لهذا اليوم.</p>'}
+                <div class="section-title"><i class="ph-bold ph-bowl-food"></i>الوجبات</div>
+                ${mealsHTML || '<p>لا توجد وجبات لهذا اليوم.</p>'}
+                
+                <div class="section-title">
+                  <i class="ph-bold ph-drop"></i>شرب الماء
+                  <button class="settings-btn" data-action="open-settings"><i class="ph-bold ph-gear"></i></button>
+                </div>
+                <div class="cup-options">
+                    <button class="cup-btn" data-action="add-water" data-amount="250">+ ٢٥٠ مل</button>
+                    <button class="cup-btn" data-action="add-water" data-amount="300">+ ٣٠٠ مل</button>
+                    <button class="cup-btn" data-action="add-water" data-amount="500">+ ٥٠٠ مل</button>
+                    <button class="cup-btn reset-btn" data-action="undo-water"><i class="ph-bold ph-arrow-u-up-left"></i> تراجع</button>
+                </div>
+                 <div class="water-progress-container">
+                    <div class="water-progress"><div class="water-text"></div><div class="water-fill"></div><i class="ph-trophy-bold water-trophy-icon"></i></div>
+                </div>
+
+                <div class="section-title"><i class="ph-bold ph-scales"></i>تسجيل الوزن</div>
+                  <div class="weight-input-area">
+                      <i class="ph-bold ph-trend-up"></i>
+                      <input type="number" step="0.1" placeholder="أدخل وزنك اليوم (كجم)..." />
+                  </div>
+              </div>`;
+        },
+        
+        createTaskCardHTML(type, index, text) {
+            return `
+            <div class="card" data-type="${type}" data-index="${index}">
+                <label>
+                <input type="checkbox" />
+                <span>${text}</span>
+                </label>
+            </div>`;
+        },
+
+        renderDayContent() {
+            const { activeWeek, activeDay } = this.state;
+            this.elements.dayContentArea.innerHTML = this.generateDayContentHTML(activeWeek, activeDay);
+            this.updateUIForDay(activeWeek, activeDay);
+        },
+        
+        updateUIForDay(week, day) {
+            const dayData = this.state.appData[week]?.[day];
+            if (!dayData) return;
+            const content = this.elements.dayContentArea.querySelector('.day-content');
+            if (!content) return;
+            
+            ['workouts', 'meals'].forEach(type => {
+                dayData[type].forEach((isChecked, index) => {
+                    const card = content.querySelector(`.card[data-type='${type}'][data-index='${index}']`);
+                    if (card) {
+                        card.querySelector('input').checked = isChecked;
+                        card.classList.toggle('completed', isChecked);
+                    }
+                });
+            });
+
+            const totalWater = dayData.waterHistory.reduce((a, b) => a + b, 0);
+            const waterGoal = this.state.settings.waterGoal;
+            const percentage = Math.min((totalWater / waterGoal) * 100, 100);
+            
+            const waterProgress = content.querySelector('.water-progress');
+            waterProgress.querySelector('.water-fill').style.width = `${percentage}%`;
+            waterProgress.querySelector('.water-text').textContent = `${totalWater} / ${waterGoal} مل`;
+            
+            const wasCompleted = waterProgress.classList.contains('completed');
+            const isCompleted = percentage >= 100;
+            waterProgress.classList.toggle('completed', isCompleted);
+
+            if(isCompleted && !wasCompleted) {
+                this.triggerConfetti();
+            }
+            
+            content.querySelector('input[type="number"]').value = dayData.weight;
+            this.updateDayProgressIndicator(week, day);
+        },
+
+        updateAllDayProgressIndicators(week) {
+            days.forEach(day => this.updateDayProgressIndicator(week, day));
+        },
+
+        updateDayProgressIndicator(week, day) {
+            const dayData = this.state.appData[week]?.[day];
+            if(!dayData) return;
+            const dayProgram = programData[week]?.[day] || {workouts:[], meals:[]};
+            
+            const dayBtn = this.elements.daySelector.querySelector(`.day-btn[data-day='${day}']`);
+            if(!dayBtn) return;
+            
+            const totalTasks = dayProgram.workouts.length + dayProgram.meals.length;
+            if (totalTasks === 0) return;
+
+            const completedTasks = dayData.workouts.filter(Boolean).length + dayData.meals.filter(Boolean).length;
+            const progress = totalTasks > 0 ? (completedTasks / totalTasks) : 0;
+            
+            const circleBar = dayBtn.querySelector('.day-progress-circle-bar');
+            const circumference = 2 * Math.PI * 8; // 2 * pi * radius
+            const offset = circumference * (1 - progress);
+            circleBar.style.strokeDasharray = circumference;
+            circleBar.style.strokeDashoffset = offset;
+        },
+
+        updateLatestWeightDisplay() {
+            let latestWeight = null;
+            for (let i = WEEKS; i >= 1; i--) {
+                const weekKey = `week${i}`;
+                for (let j = days.length - 1; j >= 0; j--) {
+                    const dayKey = days[j];
+                    const weight = this.state.appData[weekKey]?.[dayKey]?.weight;
+                    if (weight && String(weight).trim() !== '') {
+                        latestWeight = weight;
+                        this.elements.currentWeightDisplay.textContent = `${latestWeight} كجم`;
+                        return;
+                    }
+                }
+            }
+            this.elements.currentWeightDisplay.textContent = 'غير مسجل';
+        },
+
+        renderWeightChart() {
+            const weightData = [];
+            let dayIndex = 0;
+            for (let i = 1; i <= WEEKS; i++) {
+                const weekKey = `week${i}`;
+                days.forEach(dayKey => {
+                    const weight = this.state.appData[weekKey]?.[dayKey]?.weight;
+                    if (weight && String(weight).trim() !== '') {
+                        weightData.push({ day: dayIndex, weight: parseFloat(weight) });
+                    }
+                    dayIndex++;
+                });
+            }
+
+            const chartEl = this.elements.weightChart;
+            if (weightData.length < 2) {
+                chartEl.innerHTML = '<p class="no-data">سجل وزنك ليومين على الأقل لرسم المخطط.</p>';
+                return;
+            }
+
+            const svgWidth = chartEl.clientWidth;
+            const svgHeight = 200;
+            const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+            const width = svgWidth - margin.left - margin.right;
+            const height = svgHeight - margin.top - margin.bottom;
+
+            const weights = weightData.map(d => d.weight);
+            const minWeight = Math.min(...weights) - 2;
+            const maxWeight = Math.max(...weights) + 2;
+
+            const xScale = (day) => margin.left + (day / (WEEKS * 7 - 1)) * width;
+            const yScale = (weight) => margin.top + height - ((weight - minWeight) / (maxWeight - minWeight)) * height;
+
+            const linePath = weightData.map(d => `${xScale(d.day)},${yScale(d.weight)}`).join(' ');
+            
+            const gridLines = Array.from({length: 5}, (_, i) => {
+                const y = margin.top + (i / 4) * height;
+                return `<line class="grid" x1="${margin.left}" y1="${y}" x2="${width + margin.left}" y2="${y}"></line>`;
+            }).join('');
+            
+            const yAxisLabels = Array.from({length: 3}, (_, i) => {
+                const weight = minWeight + (i / 2) * (maxWeight - minWeight);
+                const y = yScale(weight);
+                return `<text class="label" x="${margin.left - 8}" y="${y + 4}" text-anchor="end">${weight.toFixed(1)}</text>`;
+            }).join('');
+
+            chartEl.innerHTML = `
+                <svg viewBox="0 0 ${svgWidth} ${svgHeight}">
+                    ${gridLines}
+                    ${yAxisLabels}
+                    <polyline class="line" points="${linePath}"></polyline>
+                    ${weightData.map(d => `<circle class="point" cx="${xScale(d.day)}" cy="${yScale(d.weight)}" r="4"></circle>`).join('')}
+                </svg>
+            `;
+        },
+        
+        // --- EVENT HANDLING ---
+        addEventListeners() {
+            this.elements.selectorsContainer.addEventListener('click', (e) => {
+                const weekBtn = e.target.closest('.week-btn');
+                const dayBtn = e.target.closest('.day-btn');
+                if (weekBtn) this.setActiveState(weekBtn.dataset.week, this.state.activeDay);
+                if (dayBtn) this.setActiveState(this.state.activeWeek, dayBtn.dataset.day);
+            });
+            
+            this.elements.dayContentArea.addEventListener('click', (e) => {
+                const actionBtn = e.target.closest('button');
+                if (actionBtn && actionBtn.dataset.action) {
+                    this.handleActionClick(actionBtn);
+                }
+            });
+
+            this.elements.dayContentArea.addEventListener('input', (e) => {
+                if (e.target.matches('input[type="checkbox"]')) this.handleCheckboxChange(e.target);
+                if (e.target.matches('input[type="number"]')) this.handleWeightChange(e.target);
+            });
+
+            this.elements.themeSwitcher.addEventListener('click', () => this.toggleTheme());
+            this.elements.settingsModal.saveBtn.addEventListener('click', () => this.saveSettings());
+            this.elements.settingsModal.cancelBtn.addEventListener('click', () => this.toggleModal(false));
+            this.elements.settingsModal.overlay.addEventListener('click', (e) => {
+                if(e.target === this.elements.settingsModal.overlay) this.toggleModal(false);
+            });
+        },
+        
+        setActiveState(week, day, force = false) {
+            if (!force && this.state.activeWeek === week && this.state.activeDay === day) return;
+            
+            const weekChanged = this.state.activeWeek !== week;
+            this.state.activeWeek = week;
+            this.state.activeDay = day;
+
+            document.querySelectorAll('.week-btn.active').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.week-btn[data-week="${week}"]`).classList.add('active');
+            
+            document.querySelectorAll('.day-btn.active').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.day-btn[data-day="${day}"]`).classList.add('active');
+            
+            if(weekChanged) this.updateAllDayProgressIndicators(week);
+
+            this.renderDayContent();
+            this.updateLatestWeightDisplay();
+            this.renderWeightChart();
+        },
+
+        handleActionClick(button) {
+            const { activeWeek, activeDay } = this.state;
+            const dayData = this.state.appData[activeWeek][activeDay];
+            const action = button.dataset.action;
+            if (action === 'add-water') {
+                dayData.waterHistory.push(parseInt(button.dataset.amount));
+            } else if (action === 'undo-water') {
+                dayData.waterHistory.pop();
+            } else if (action === 'open-settings') {
+                this.toggleModal(true);
+            }
+            this.saveData();
+            this.updateUIForDay(activeWeek, activeDay);
+        },
+        
+        handleCheckboxChange(checkbox) {
+            const { activeWeek, activeDay } = this.state;
+            const card = checkbox.closest('.card');
+            const { type, index } = card.dataset;
+            this.state.appData[activeWeek][activeDay][type][index] = checkbox.checked;
+            this.saveData();
+            this.updateUIForDay(activeWeek, activeDay);
+        },
+        
+        handleWeightChange(input) {
+            const { activeWeek, activeDay } = this.state;
+            this.state.appData[activeWeek][activeDay].weight = input.value;
+            this.saveData();
+        },
+
+        // --- MODAL & SETTINGS ---
+        toggleModal(visible) {
+            const { overlay, waterGoalInput } = this.elements.settingsModal;
+            if(visible) {
+                waterGoalInput.value = this.state.settings.waterGoal;
+                overlay.classList.add('visible');
+            } else {
+                overlay.classList.remove('visible');
+            }
+        },
+
+        saveSettings() {
+            const newGoal = parseInt(this.elements.settingsModal.waterGoalInput.value);
+            if (newGoal && newGoal > 0) {
+                this.state.settings.waterGoal = newGoal;
+                this.saveData();
+                this.toggleModal(false);
+                this.updateUIForDay(this.state.activeWeek, this.state.activeDay);
+            }
+        },
+
+        // --- EXTRA FEATURES ---
+        triggerConfetti() {
+            const container = this.elements.dayContentArea.querySelector('.water-progress-container');
+            const colors = ['#0a84ff', '#5e5ce6', '#34c759', '#ff9f0a', '#ff3b30'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = -20 + 'px';
+                confetti.style.animation = `confetti-fall ${1 + Math.random() * 2}s ease-out forwards`;
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+      };
+      
+      App.init();
+    });
+  </script>
+</body>
+</html>
